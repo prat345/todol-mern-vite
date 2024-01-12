@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+table tr td {
+  word-wrap: break-word;
+  max-width: 300px;
+}
