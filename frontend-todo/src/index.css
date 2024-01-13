@@ -1,8 +1,48 @@
+@import url("https://fonts.googleapis.com/css2?family=Itim&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: "Itim", cursive;
+  background-color: antiquewhite;
+}
+#root {
+  @apply flex justify-center items-center min-h-screen py-20;
+}
 table tr td {
   word-wrap: break-word;
   max-width: 300px;
+  color: #7b838a;
+}
+.pagination button:disabled {
+  background-color: #e9e9e9;
+  color: #999;
+  /* border: 1px solid #999; */
+}
+.pagination button {
+  border-radius: 100%;
+  border: 1px solid rgb(235, 230, 230);
+  color: #3f3f3f;
+  display: flex;
+  /* padding: 5px; */
+  width: 30px;
+  height: 30px;
+  transition: all 0.2s;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 14px;
+  }
+  .pagination button {
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+  }
 }

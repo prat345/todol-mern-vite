@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import axios, { all } from "axios";
+import {
+  LuChevronLeft,
+  LuChevronsLeft,
+  LuChevronRight,
+  LuChevronsRight,
+  LuTrash2,
+  LuPenLine,
+} from "react-icons/lu";
 
-axios.defaults.baseURL = "http://localhost:5000/";
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_API; // vite
 
 function App() {
-  const [allTodo, setAllTodo] = useState([{ _id: "w123", task: "default" }]);
+  const [allTodo, setAllTodo] = useState([{ _id: "0000", task: "default" }]);
+  const [isTouched, setIsTouched] = useState(false);
+  const [isValid, setIsValid] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [isValid, setIsValid] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [pageNum, setPageNum] = useState(3);
@@ -27,7 +34,9 @@ function App() {
 
   useEffect(() => {
     fetchTodo();
-    console.log(allTodo.length, page, pageSize, pageNum);
+    console.log(
+      `Tasks:${countTasks} page:${page} perpage:${pageSize} npages:${pageNum}`
+    );
   }, [page, pageSize, pageNum]);
 
   // Delete each task
@@ -38,6 +47,7 @@ function App() {
   };
 
   const handleChange = (e) => {
+    setIsTouched(true);
     setInputValue(e.target.value);
     if (e.target.value.length < 3 || e.target.value.length > 30) {
       setIsValid(false);
@@ -56,6 +66,8 @@ function App() {
       task: inputValue,
     });
     setInputValue("");
+    setIsValid(false);
+    setIsTouched(false);
     fetchTodo();
   };
 
@@ -110,14 +122,43 @@ function App() {
     }
   };
 
+  // pagination
+  const getPagination = (page, pageNum) => {
+    const arr = [...Array(pageNum).keys()];
+    let out = [];
+    // less than 3 pages show 1,2,3
+    if (arr.length <= 3) {
+      return Array.from({ length: arr.length }, (_, index) => index + 1);
+    }
+    // at last 3 pages show last 3
+    if (arr.length - page < 3) {
+      return [arr.length - 2, arr.length - 1, arr.length];
+    } else {
+      if (page <= 3) {
+        out.push(1, 2, 3, "...", arr.length);
+        return out;
+      }
+      for (let i = 1; i < arr.length; i++) {
+        // show 2 pages before current and ... after
+        if (page - i > 2 || i > page) continue;
+        out.push(i);
+      }
+      if (arr.length - page > 2) out.push("...", arr.length);
+    }
+    // console.log(page, out);
+    return out;
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="px-2">
       <div
-        className="flex justify-center items-center flex-col space-y-10 p-10 bg-stone-100 shadow-lg rounded-lg "
-        style={{ width: "80vw" }}
+        className="flex justify-center items-center flex-col space-y-10 px-2 py-4 sm:p-10 bg-stone-100 shadow-lg rounded-lg"
+        style={{ minWidth: "80vw" }}
       >
-        <h1 className="text-2xl font-bold capitalize">todo list MERN</h1>
-        <form>
+        <h1 className="text-xl sm:text-3xl font-bold uppercase text-center">
+          todo list MERN
+        </h1>
+        <div className="flex justify-center items-center space-y-2">
           <input
             type="text"
             name="task"
@@ -127,24 +168,27 @@ function App() {
           />
           <button
             onClick={handleSubmit}
-            className="text-white bg-slate-500 px-2 py-1 rounded-md mr-2 hover:bg-slate-700 transition duration-300"
+            className="text-white bg-blue-500 border-2 border-blue-500 px-2 py-1 rounded-md !m-0 hover:bg-blue-700 hover:border-blue-700 transition duration-300"
             disabled={!isValid}
           >
-            Add Todo
+            Add new
           </button>
-          {!isValid && (
-            <p className="text-red-500">Must be between 3-30 characters</p>
+          {isTouched && !isValid && (
+            <p className="text-sm" style={{ color: "red" }}>
+              Must contain 3-30 characters
+            </p>
           )}
-        </form>
+        </div>
         <button
           onClick={handleDeleteSelected}
-          className="self-end text-white bg-orange-500 px-2 py-1 rounded-md mr-2 hover:bg-orange-700 transition duration-300"
+          className="self-end text-white bg-red-500 border-2 border-red-500 px-2 py-1 rounded-md mr-2 hover:bg-red-700 hover:border-red-700 transition duration-300"
         >
-          Delete Many
+          Delete selected
         </button>
         <div className="table-container bg-white rounded-md w-full p-4 !mt-4">
           <p>
-            {selectedTasks.length}/{countTasks} results
+            {selectedTasks.length}/{countTasks}{" "}
+            <span className="font-medium">selected </span>
           </p>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="text-slate-700">
@@ -156,8 +200,8 @@ function App() {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="px-4 py-2">Index</th>
-                <th className="px-4 py-2">Task ID</th>
+                <th className="px-4 py-2 hidden sm:table-cell">Index</th>
+                <th className="px-4 py-2 hidden md:table-cell">Task ID</th>
                 <th className="px-4 py-2">Task</th>
                 <th className="px-4 py-2">Actions</th>
               </tr>
@@ -174,54 +218,85 @@ function App() {
                       onChange={(e) => handleSelectTask(e.target.value)}
                     />
                   </td>
-                  <td className="px-4 py-2">{index}</td>
-                  <td className="px-4 py-2">
-                    {task._id ? task._id.slice(-5) : ""}
+                  <td className="px-4 py-2 hidden sm:table-cell">
+                    {pageSize * (page - 1) + index + 1}
+                  </td>
+                  <td className="px-4 py-2 hidden md:table-cell">
+                    {task._id ? task._id.slice(-4) : ""}
                   </td>
                   <td className="px-4 py-2">{task.task}</td>
                   <td className="px-4 py-2">
-                    <button
-                      onClick={() => updateTodo(task._id)}
-                      className="text-white bg-blue-500 px-2 py-1 rounded-md mr-2 hover:bg-blue-700 transition duration-300"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteTodo(task._id)}
-                      className="text-white bg-red-500 px-2 py-1 rounded-md hover:bg-red-700 transition duration-300"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex justify-center space-x-2">
+                      <button
+                        onClick={() => updateTodo(task._id)}
+                        className="text-xl text-slate-500 p-2 hover:text-slate-900"
+                      >
+                        <LuPenLine />
+                      </button>
+                      <button
+                        onClick={() => deleteTodo(task._id)}
+                        className="text-xl text-red-500 p-2 hover:text-red-900"
+                      >
+                        <LuTrash2 />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="flex justify-between">
-            <div className="flex justify-end space-x-2">
-              {[...Array(pageNum).keys()].map((i) => (
+          <div className="pagination flex flex-wrap justify-between items-center mt-5">
+            <div className="flex justify-end space-x-1">
+              <button onClick={() => setPage(1)} disabled={page === 1}>
+                <LuChevronsLeft />
+              </button>
+              <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+                <LuChevronLeft />
+              </button>
+              {getPagination(page, pageNum).map((num) => (
                 <button
+                  key={num}
                   className={`border rounded-md px-2 transition duration-200 ${
-                    page === i + 1 ? "bg-blue-500 text-white" : ""
+                    page === num
+                      ? "bg-blue-500 !border-blue-500 !text-white"
+                      : ""
                   }`}
-                  onClick={() => setPage(i + 1)}
+                  onClick={() => {
+                    typeof num === "number"
+                      ? setPage(num)
+                      : setPage(page + Math.floor((pageNum - page) / 2));
+                  }}
                 >
-                  {i + 1}
+                  {num}
                 </button>
               ))}
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === pageNum}
+              >
+                <LuChevronRight />
+              </button>
+              <button
+                onClick={() => setPage(pageNum)}
+                disabled={page === pageNum}
+              >
+                <LuChevronsRight />
+              </button>
             </div>
-            <span>
+            <span className="order-[-1]">
               <label htmlFor="page-size-select" className="mr-3 font-medium">
                 Pages
               </label>
               <select
                 name="page-size-select"
-                className="border rounded-md px-2 py-1"
+                className="border rounded-md px-2"
                 onChange={(e) => setPageSize(e.target.value)}
               >
                 {[3, 5, 7].map((n) => (
-                  <option value={n}>{n}</option>
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
                 ))}
               </select>
             </span>

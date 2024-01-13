@@ -1,13 +1,21 @@
 const express = require("express");
 const cors = require("cors");
+const dotenv = require("dotenv");
+const path = require("path");
+
+dotenv.config();
 
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://localhost:27017");
-const Todo = mongoose.model("Todo", { task: String, id: Number });
+console.log(process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI);
+const Todo = mongoose.model("Todo", {
+  id: Number,
+  task: String,
+  status: Boolean,
+});
 
 const app = express();
-const port = 5000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // convert input form to json
@@ -21,7 +29,7 @@ app.get("/", (req, res) => {
 app.get("/todo", async (req, res) => {
   // console.log(req);
   const { query } = req;
-  console.log("On page:", query.page, "N pages:", query.pageSize);
+  console.log("On page:", query.page, "pages(n):", query.pageSize);
   const todos = await Todo.find({})
     .skip(query.pageSize * (query.page - 1))
     .limit(query.pageSize);
@@ -68,6 +76,14 @@ app.post("/todo/delete_selected", async (req, res) => {
   res.send({ result: result.deletedCount });
 });
 
+// *** use build version(frontend) for production, use proxy, solve cors err
+// const __dirname = path.resolve();
+// app.use(express.static(path.join(__dirname, "/dist")));
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "/dist/index.html"));
+// });
+
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server running at http://localhost/${port}`);
 });
