@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import axios, { all } from "axios";
+import axios from "axios";
 import {
   LuChevronLeft,
   LuChevronsLeft,
@@ -9,6 +9,8 @@ import {
   LuTrash2,
   LuPenLine,
 } from "react-icons/lu";
+import { Link, useLocation } from "react-router-dom";
+import Pagination from "./components/Pagination";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_API; // vite
 
@@ -19,25 +21,31 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
-  const [pageNum, setPageNum] = useState(3);
-  const [page, setPage] = useState(1);
+  const [pageCount, setpageCount] = useState(1);
+  // const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(3);
   const [countTasks, setCountTasks] = useState();
+
+  const { search } = useLocation();
+  console.log(search);
+  const sp = new URLSearchParams(search);
+  const page = parseInt(sp.get("page") || 1);
+  console.log(page);
 
   const fetchTodo = async () => {
     const { data } = await axios.get(`/todo?page=${page}&pageSize=${pageSize}`);
     console.log("GET", data.todos);
     setAllTodo(data.todos);
     setCountTasks(data.countTasks);
-    setPageNum(Math.ceil(data.countTasks / pageSize));
+    setpageCount(Math.ceil(data.countTasks / pageSize));
   };
 
   useEffect(() => {
     fetchTodo();
     console.log(
-      `Tasks:${countTasks} page:${page} perpage:${pageSize} npages:${pageNum}`
+      `Tasks:${countTasks} page:${page} perpage:${pageSize} npages:${pageCount}`
     );
-  }, [page, pageSize, pageNum]);
+  }, [pageSize, pageCount, page]);
 
   // Delete each task
   const deleteTodo = async (_id) => {
@@ -97,11 +105,6 @@ function App() {
   // Delete Multiple
   const handleDeleteSelected = async () => {
     console.log("To delete", selectedTasks);
-    // const newTodo = allTodo.filter(
-    //   (task, i) => !selectedTasks.includes(task._id)
-    // );
-    // console.log(newTodo);
-    // setAllTodo(newTodo);
     const { data } = await axios.post("/todo/delete_selected", {
       selectedTasks,
     });
@@ -123,31 +126,31 @@ function App() {
   };
 
   // pagination
-  const getPagination = (page, pageNum) => {
-    const arr = [...Array(pageNum).keys()];
-    let out = [];
-    // less than 3 pages show 1,2,3
-    if (arr.length <= 3) {
-      return Array.from({ length: arr.length }, (_, index) => index + 1);
-    }
-    // at last 3 pages show last 3
-    if (arr.length - page < 3) {
-      return [arr.length - 2, arr.length - 1, arr.length];
-    } else {
-      if (page <= 3) {
-        out.push(1, 2, 3, "...", arr.length);
-        return out;
-      }
-      for (let i = 1; i < arr.length; i++) {
-        // show 2 pages before current and ... after
-        if (page - i > 2 || i > page) continue;
-        out.push(i);
-      }
-      if (arr.length - page > 2) out.push("...", arr.length);
-    }
-    // console.log(page, out);
-    return out;
-  };
+  // const getPagination = (page, pageCount) => {
+  //   const arr = [...Array(pageCount).keys()];
+  //   let out = [];
+  //   // less than 3 pages show 1,2,3
+  //   if (arr.length <= 3) {
+  //     return Array.from({ length: arr.length }, (_, index) => index + 1);
+  //   }
+  //   // at last 3 pages show last 3
+  //   if (arr.length - page < 3) {
+  //     return [arr.length - 2, arr.length - 1, arr.length];
+  //   } else {
+  //     if (page <= 3) {
+  //       out.push(1, 2, 3, "...", arr.length);
+  //       return out;
+  //     }
+  //     for (let i = 1; i < arr.length; i++) {
+  //       // show 2 pages before current and ... after
+  //       if (page - i > 2 || i > page) continue;
+  //       out.push(i);
+  //     }
+  //     if (arr.length - page > 2) out.push("...", arr.length);
+  //   }
+  //   // console.log(page, out);
+  //   return out;
+  // };
 
   return (
     <div className="px-2">
@@ -246,44 +249,8 @@ function App() {
             </tbody>
           </table>
 
-          <div className="pagination flex flex-wrap justify-between items-center mt-5">
-            <div className="flex justify-end space-x-1">
-              <button onClick={() => setPage(1)} disabled={page === 1}>
-                <LuChevronsLeft />
-              </button>
-              <button onClick={() => setPage(page - 1)} disabled={page === 1}>
-                <LuChevronLeft />
-              </button>
-              {getPagination(page, pageNum).map((num) => (
-                <button
-                  key={num}
-                  className={`border rounded-md px-2 transition duration-200 ${
-                    page === num
-                      ? "bg-blue-500 !border-blue-500 !text-white"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    typeof num === "number"
-                      ? setPage(num)
-                      : setPage(page + Math.floor((pageNum - page) / 2));
-                  }}
-                >
-                  {num}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage(page + 1)}
-                disabled={page === pageNum}
-              >
-                <LuChevronRight />
-              </button>
-              <button
-                onClick={() => setPage(pageNum)}
-                disabled={page === pageNum}
-              >
-                <LuChevronsRight />
-              </button>
-            </div>
+          <div className="pagination flex flex-wrap justify-end sm:justify-between gap-y-2 gap-x-4 items-center mt-5">
+            <Pagination page={page} pageCount={pageCount} />
             <span className="order-[-1]">
               <label htmlFor="page-size-select" className="mr-3 font-medium">
                 Pages
