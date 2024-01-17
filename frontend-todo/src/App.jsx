@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import axios from "axios";
-import {
-  LuChevronLeft,
-  LuChevronsLeft,
-  LuChevronRight,
-  LuChevronsRight,
-  LuTrash2,
-  LuPenLine,
-} from "react-icons/lu";
-import { Link, useLocation } from "react-router-dom";
+import { LuTrash2, LuPenLine } from "react-icons/lu";
+import { useLocation } from "react-router-dom";
 import Pagination from "./components/Pagination";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_API; // vite
@@ -21,15 +14,15 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
-  const [pageCount, setpageCount] = useState(1);
-  // const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
   const [pageSize, setPageSize] = useState(3);
   const [countTasks, setCountTasks] = useState();
 
   const { search } = useLocation();
   console.log(search);
   const sp = new URLSearchParams(search);
-  const page = parseInt(sp.get("page") || 1);
+  let page = parseInt(sp.get("page") || 1);
+  if (page > pageCount) page = pageCount;
   console.log(page);
 
   const fetchTodo = async () => {
@@ -37,7 +30,7 @@ function App() {
     console.log("GET", data.todos);
     setAllTodo(data.todos);
     setCountTasks(data.countTasks);
-    setpageCount(Math.ceil(data.countTasks / pageSize));
+    setPageCount(Math.ceil(data.countTasks / pageSize));
   };
 
   useEffect(() => {
@@ -121,36 +114,9 @@ function App() {
     if (isSelectAll) {
       setSelectedTasks([]);
     } else {
-      setSelectedTasks(allTodo.map((task, i) => task._id));
+      setSelectedTasks(allTodo.map((task) => task._id));
     }
   };
-
-  // pagination
-  // const getPagination = (page, pageCount) => {
-  //   const arr = [...Array(pageCount).keys()];
-  //   let out = [];
-  //   // less than 3 pages show 1,2,3
-  //   if (arr.length <= 3) {
-  //     return Array.from({ length: arr.length }, (_, index) => index + 1);
-  //   }
-  //   // at last 3 pages show last 3
-  //   if (arr.length - page < 3) {
-  //     return [arr.length - 2, arr.length - 1, arr.length];
-  //   } else {
-  //     if (page <= 3) {
-  //       out.push(1, 2, 3, "...", arr.length);
-  //       return out;
-  //     }
-  //     for (let i = 1; i < arr.length; i++) {
-  //       // show 2 pages before current and ... after
-  //       if (page - i > 2 || i > page) continue;
-  //       out.push(i);
-  //     }
-  //     if (arr.length - page > 2) out.push("...", arr.length);
-  //   }
-  //   // console.log(page, out);
-  //   return out;
-  // };
 
   return (
     <div className="px-2">
@@ -249,25 +215,11 @@ function App() {
             </tbody>
           </table>
 
-          <div className="pagination flex flex-wrap justify-end sm:justify-between gap-y-2 gap-x-4 items-center mt-5">
-            <Pagination page={page} pageCount={pageCount} />
-            <span className="order-[-1]">
-              <label htmlFor="page-size-select" className="mr-3 font-medium">
-                Pages
-              </label>
-              <select
-                name="page-size-select"
-                className="border rounded-md px-2"
-                onChange={(e) => setPageSize(e.target.value)}
-              >
-                {[3, 5, 7].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </span>
-          </div>
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            setPageSize={setPageSize}
+          />
         </div>
       </div>
     </div>
