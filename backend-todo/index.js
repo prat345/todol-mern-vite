@@ -13,6 +13,8 @@ const Todo = mongoose.model("Todo", {
   id: Number,
   task: String,
   status: Boolean,
+  date: String,
+  skills: Array,
 });
 
 const app = express();
@@ -39,9 +41,13 @@ app.get("/todo", async (req, res) => {
 });
 
 app.post("/todo/add", async (req, res) => {
-  console.log(req.body.task);
+  console.log(req.body.formData);
+  const { task, date, status, skills } = req.body.formData;
   const newTodo = new Todo({
-    task: req.body.task,
+    task,
+    date,
+    status,
+    skills,
   });
   const todo = await newTodo.save(); // save to db
   res.send({
@@ -56,10 +62,16 @@ app.delete("/todo/delete/:_id", async (req, res) => {
 });
 
 app.put("/todo/update/:_id", async (req, res) => {
+  const formData = req.body.formData;
+  console.log(formData);
   const todo = await Todo.findById(req.params._id);
   if (todo) {
-    console.log(req.params._id, todo);
-    todo.task = req.body.newTask;
+    // console.log(req.params._id, todo);
+    todo.task = formData.task;
+    todo.date = formData.date;
+    todo.status = formData.status;
+    todo.skills = formData.skills;
+
     const updatedTodo = await todo.save();
     res.send({ task: updatedTodo.task });
   } else {
